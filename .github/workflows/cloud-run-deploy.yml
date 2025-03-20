@@ -1,0 +1,54 @@
+name: Deploy to Cloud Run
+
+on:
+  push:
+    branches: [ main ]
+
+env:
+  PROJECT_ID: grantcraft
+  SERVICE_NAME: grantcraft-backend
+  REGION: us-central1
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+      
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        
+      - name: Google Auth
+        id: auth
+        uses: google-github-actions/auth@v1
+        with:
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+          
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v1
+        
+      - name: Build and push container
+        run: |
+          gcloud builds submit --tag gcr.io/$PROJECT_ID/$SERVICE_NAME
+        
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy $SERVICE_NAME \
+            --image gcr.io/$PROJECT_ID/$SERVICE_NAME \
+            --platform managed \
+            --region $REGION \
+            --allow-unauthenticated \
+            --add-cloudsql-instances ${{ secrets.CLOUD_SQL_CONNECTION_NAME }} \
+            --update-env-vars="REWORKD_PLATFORM_ENVIRONMENT=production,\
+          REWORKD_PLATFORM_DATABASE_USER=${{ secrets.DB_USER }},\
+          REWORKD_PLATFORM_DATABASE_PASSWORD=${{ secrets.DB_PASSWORD }},\
+          REWORKD_PLATFORM_DATABASE_HOST=127.0.0.1,\
+          REWORKD_PLATFORM_DATABASE_PORT=3306,\
+          REWORKD_PLATFORM_DATABASE_NAME=${{ secrets.DB_NAME }},\
+          REWORKD_PLATFORM_OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }},\
+          REWORKD_PLATFORM_FRONTEND_URL=${{ secrets.FRONTEND_URL }},\
+          REWORKD_PLATFORM_HOST=0.0.0.0"
