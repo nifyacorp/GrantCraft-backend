@@ -40,10 +40,10 @@ class Settings(BaseSettings):
     """
 
     # Application settings
-    host: str = "127.0.0.1"
-    port: int = 8000
+    host: str = "0.0.0.0"  # Changed to listen on all interfaces for Cloud Run
+    port: int = 8080  # Changed to match Cloud Run expected port
     workers_count: int = 1
-    reload: bool = True
+    reload: bool = False  # Disabled reload for production
     environment: ENVIRONMENT = "development"
     log_level: LOG_LEVEL = "INFO"
 

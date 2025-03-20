@@ -36,11 +36,13 @@ COPY . /app/src/
 RUN poetry install --only main
 
 # Expose port
-EXPOSE 8000
+EXPOSE 8080
 
 # Cloud Run uses port 8080 by default
 ENV PORT=8080
 ENV REWORKD_PLATFORM_PORT=8080
+ENV REWORKD_PLATFORM_HOST=0.0.0.0
+ENV REWORKD_PLATFORM_RELOAD=false
 
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["/usr/local/bin/python", "-m", "reworkd_platform"]
